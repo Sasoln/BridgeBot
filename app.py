@@ -558,17 +558,19 @@ if st.session_state.messages:
                 return p.strip()
             except: return None
 
-        # Creiamo un design elegante, uniforme e color crema per i titoli
+        # Versione potenziata: Titoli bianchi garantiti su fondo nero
         def titolo_card(nome):
             st.markdown(f"""
             <style>
-                /* Questa regola forza il bianco ignorando il CSS globale */
                 .dark-label-card-{nome.lower()} h3 {{
                     color: #FFFFFF !important;
+                    -webkit-text-fill-color: #FFFFFF !important;
                 }}
             </style>
-            <div class="dark-label-card-{nome.lower()}" style="background-color: #1A1A1A; border-radius: 6px; padding: 0.6rem 1.2rem; margin-bottom: 1.2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <h3 style="margin: 0; font-family: 'Inter', sans-serif; font-size: 1.05rem; font-weight: 600; letter-spacing: 0.5px;">{nome}</h3>
+            <div class="dark-label-card-{nome.lower()}" style="background-color: #1A1A1A; border-radius: 6px; padding: 0.6rem 1.2rem; margin-bottom: 1.2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.15);">
+                <h3 style="margin: 0; font-family: 'Inter', sans-serif; font-size: 1.05rem; font-weight: 600; letter-spacing: 0.5px; color: #FFFFFF !important;">
+                    {nome}
+                </h3>
             </div>
             """, unsafe_allow_html=True)
 
