@@ -508,10 +508,6 @@ REGOLE ASSOLUTE DI LINGUA:
    - Se l'utente scrive in Italiano -> Rispondi in Italiano.
    - NON mescolare le lingue.
 
-STRUTTURA OUTPUT:
-Usa SEMPRE i tag [LINKEDIN], [INSTAGRAM], [TIKTOK], [FACEBOOK] per separare le sezioni.
-
-
 
 REGOLE DI CONTENUTO E FORMATTAZIONE (CRITICHE):
 - COPY COMPLETO: Non fare riassunti o "spiegazioni" di cosa faresti. Scrivi il TESTO REALE, COMPLETO E CORPOSO, pronto per essere pubblicato.
