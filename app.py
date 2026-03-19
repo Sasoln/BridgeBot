@@ -464,6 +464,7 @@ with st.sidebar:
     st.markdown("**Tone & Audience**", help="Define your strategic parameters")
     tono_manuale = st.text_input("Tone", placeholder="Professional, Sarcastic, Emotional, Institutional...")
     target_manuale = st.text_input("Target", placeholder="Gen Z, Fitness enthusiasts, Entrepreneurs, Millennials...")
+    lingua = st.selectbox("Language", ["Italiano", "English", "Spanish", "French", "German"], index=0)
     
    
     
@@ -500,6 +501,7 @@ Sei BridgetBot, Senior Copywriter e Context Strategist esperto in Scienze della 
 PARAMETRI MANDATORI:
 - TONO: {tono_manuale if tono_manuale else 'Professionale e analitico'}
 - TARGET: {target_manuale if target_manuale else 'Pubblico generalista'}
+- LINGUA DI OUTPUT: {lingua}  
 
 REGOLE DI CONTENUTO E FORMATTAZIONE (CRITICHE):
 - COPY COMPLETO: Non fare riassunti o "spiegazioni" di cosa faresti. Scrivi il TESTO REALE, COMPLETO E CORPOSO, pronto per essere pubblicato.
