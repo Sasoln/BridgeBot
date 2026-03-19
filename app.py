@@ -556,25 +556,24 @@ if idea:
 
 # --- VISUALIZZAZIONE ---
 if st.session_state.messages:
-    # 1. Ciclo per mostrare la cronologia
+    # 1. Mostriamo la cronologia (User + eventuali risposte Assistant senza tag)
     for i, msg in enumerate(st.session_state.messages):
-        # Determiniamo se è l'ultimo messaggio dell'assistente con i tag
-        is_assistant = msg["role"] == "assistant"
-        is_last = (i == len(st.session_state.messages) - 1)
-        has_tags = "[LINKEDIN]" in msg["content"]
-
-        # MOSTRA il messaggio solo se:
-        # - È dell'utente
-        # - O è un messaggio vecchio dell'assistente
-        # - O è l'assistente ma NON ha i tag (es. un saluto "Ciao!")
-        if msg["role"] == "user" or not (is_last and has_tags):
+        is_last_assistant_with_tags = (
+            msg["role"] == "assistant" and 
+            "[LINKEDIN]" in msg["content"] and 
+            i == len(st.session_state.messages) - 1
+        )
+        
+        # Mostriamo il messaggio solo se NON è l'ultima risposta strutturata (che mettiamo nelle card)
+        if msg["role"] == "user" or not is_last_assistant_with_tags:
             with st.chat_message(msg["role"]):
                 st.write(msg["content"])
 
-    # 2. Se l'ultimo messaggio dell'assistente ha i tag, creiamo le Card
+    # 2. Se l'ultima risposta è strutturata, creiamo le Card nere
     ultimo_msg = st.session_state.messages[-1]
     if ultimo_msg["role"] == "assistant" and "[LINKEDIN]" in ultimo_msg["content"]:
-        testo_completo = ultimo_msg["content"]
+        # Definiamo 'ultima' correttamente per evitare l'errore rosso
+        ultima = ultimo_msg["content"]
 
         def estrai(testo, tag, tag_succ=None):
             try:
@@ -586,22 +585,31 @@ if st.session_state.messages:
         def titolo_card(nome):
             st.markdown(f"""
             <div style="background-color: #1A1A1A; border-radius: 6px; padding: 0.6rem 1.2rem; margin-top: 1.5rem; margin-bottom: 1rem;">
-                <h3 style="margin: 0; color: #FFFFFF !important; font-size: 1.05rem;">{nome}</h3>
+                <h3 style="margin: 0; color: #FFFFFF !important; font-size: 1.05rem; font-family: 'Inter', sans-serif;">{nome}</h3>
             </div>
             """, unsafe_allow_html=True)
 
-        socials = [
-            ("[LINKEDIN]", "[INSTAGRAM]", "LinkedIn"),
-            ("[INSTAGRAM]", "[TIKTOK]", "Instagram"),
-            ("[TIKTOK]", "[FACEBOOK]", "TikTok"),
-            ("[FACEBOOK]", None, "Facebook")
-        ]
-
-        for tag, succ, nome in socials:
-            contenuto = estrai(testo_completo, tag, succ)
-            if contenuto:
-                titolo_card(nome)
-                st.write(contenuto)
+        # Layout delle card (Sostituito 'testo_completo' con 'ultima')
+        st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
+        
+        # LinkedIn
+        titolo_card("LinkedIn")
+        st.write(estrai(ultima, "[LINKEDIN]", "[INSTAGRAM]"))
+        
+        # Instagram
+        st.markdown("<div style='margin-top: 2.5rem;'></div>", unsafe_allow_html=True)
+        titolo_card("Instagram")
+        st.write(estrai(ultima, "[INSTAGRAM]", "[TIKTOK]"))
+        
+        # TikTok
+        st.markdown("<div style='margin-top: 2.5rem;'></div>", unsafe_allow_html=True)
+        titolo_card("TikTok")
+        st.write(estrai(ultima, "[TIKTOK]", "[FACEBOOK]"))
+        
+        # Facebook
+        st.markdown("<div style='margin-top: 2.5rem;'></div>", unsafe_allow_html=True)
+        titolo_card("Facebook")
+        st.write(estrai(ultima, "[FACEBOOK]"))
 
         # Versione potenziata: Titoli bianchi garantiti su fondo nero
         def titolo_card(nome):
