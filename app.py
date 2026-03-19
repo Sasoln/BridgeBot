@@ -517,7 +517,7 @@ REGOLE DI CONTENUTO E FORMATTAZIONE (CRITICHE):
 - VALIDO PER TUTTI E 4 I TAG: Applica queste regole a tutti e 4 i formati (LinkedIn, Instagram, TikTok, Facebook). Non fare eccezioni.
 
 STRUTTURA DI OUTPUT OBBLIGATORIA:
-Usa ESATTAMENTE questi 4 tag. NON aggiungere alcun saluto o testo prima del primo tag.
+Usa SEMPRE i tag [LINKEDIN], [INSTAGRAM], [TIKTOK], [FACEBOOK] per separare le sezioni. NON aggiungere alcun saluto o testo prima del primo tag.
 
 [LINKEDIN]
 Scrivi un post completo e lungo (almeno 150-200 parole) di Thought Leadership.
@@ -556,61 +556,52 @@ if idea:
 
 # --- VISUALIZZAZIONE ---
 if st.session_state.messages:
-    # 1. Mostriamo la cronologia della chat (Messaggio Utente + Risposte vecchie)
+    # 1. Ciclo per mostrare la cronologia
     for i, msg in enumerate(st.session_state.messages):
-        # Evitiamo di mostrare l'ultima risposta dell'assistente come testo semplice
-        # se stiamo per trasformarla nelle card nere, altrimenti sarebbe un doppione.
-        is_ultima_risposta_con_tag = (
-            msg["role"] == "assistant" and 
-            "[LINKEDIN]" in msg["content"] and 
-            msg == st.session_state.messages[-1]
-        )
-        
-        if not is_ultima_risposta_con_tag:
+        # Determiniamo se è l'ultimo messaggio dell'assistente con i tag
+        is_assistant = msg["role"] == "assistant"
+        is_last = (i == len(st.session_state.messages) - 1)
+        has_tags = "[LINKEDIN]" in msg["content"]
+
+        # MOSTRA il messaggio solo se:
+        # - È dell'utente
+        # - O è un messaggio vecchio dell'assistente
+        # - O è l'assistente ma NON ha i tag (es. un saluto "Ciao!")
+        if msg["role"] == "user" or not (is_last and has_tags):
             with st.chat_message(msg["role"]):
                 st.write(msg["content"])
 
-    # 2. Se l'ultima risposta dell'IA è una strategia (contiene i tag), creiamo le Card
-    ultima = st.session_state.messages[-1]["content"] if st.session_state.messages[-1]["role"] == "assistant" else None
-    
-    if ultima and "[LINKEDIN]" in ultima:
+    # 2. Se l'ultimo messaggio dell'assistente ha i tag, creiamo le Card
+    ultimo_msg = st.session_state.messages[-1]
+    if ultimo_msg["role"] == "assistant" and "[LINKEDIN]" in ultimo_msg["content"]:
+        testo_completo = ultimo_msg["content"]
+
         def estrai(testo, tag, tag_succ=None):
             try:
-                parti = testo.split(tag)
-                if len(parti) < 2: return None
-                p = parti[1]
+                p = testo.split(tag)[1]
                 if tag_succ: p = p.split(tag_succ)[0]
                 return p.strip()
             except: return None
 
         def titolo_card(nome):
             st.markdown(f"""
-            <style>
-                .dark-label-card-{nome.lower()} h3 {{
-                    color: #FFFFFF !important;
-                    -webkit-text-fill-color: #FFFFFF !important;
-                }}
-            </style>
-            <div class="dark-label-card-{nome.lower()}" style="background-color: #1A1A1A; border-radius: 6px; padding: 0.6rem 1.2rem; margin-top: 1.5rem; margin-bottom: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.15);">
-                <h3 style="margin: 0; font-family: 'Inter', sans-serif; font-size: 1.05rem; font-weight: 600; letter-spacing: 0.5px; color: #FFFFFF !important;">
-                    {nome}
-                </h3>
+            <div style="background-color: #1A1A1A; border-radius: 6px; padding: 0.6rem 1.2rem; margin-top: 1.5rem; margin-bottom: 1rem;">
+                <h3 style="margin: 0; color: #FFFFFF !important; font-size: 1.05rem;">{nome}</h3>
             </div>
             """, unsafe_allow_html=True)
 
-        # Visualizzazione Social ordinata
-        social_list = [
+        socials = [
             ("[LINKEDIN]", "[INSTAGRAM]", "LinkedIn"),
             ("[INSTAGRAM]", "[TIKTOK]", "Instagram"),
             ("[TIKTOK]", "[FACEBOOK]", "TikTok"),
             ("[FACEBOOK]", None, "Facebook")
         ]
 
-        for tag, succ, nome in social_list:
-            testo_estratto = estrai(ultima, tag, succ)
-            if testo_estratto:
+        for tag, succ, nome in socials:
+            contenuto = estrai(testo_completo, tag, succ)
+            if contenuto:
                 titolo_card(nome)
-                st.write(testo_estratto)
+                st.write(contenuto)
 
         # Versione potenziata: Titoli bianchi garantiti su fondo nero
         def titolo_card(nome):
