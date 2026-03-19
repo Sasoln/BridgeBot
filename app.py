@@ -502,7 +502,7 @@ PARAMETRI:
 - TARGET: {target_manuale if target_manuale else 'Pubblico generalista'}
 
 REGOLE ASSOLUTE DI LINGUA:
-1. RILEVAMENTO: Identifica la lingua dell'ULTIMO messaggio dell'utente.
+1. LINGUA: Devi rispondere ESCLUSIVAMENTE nella stessa lingua usata dall'utente. Se l'utente scrive in Inglese, non usare una sola parola di Italiano.
 2. RISPOSTA: Scrivi l'INTERO output (inclusi i concetti e il copy) nella STESSA LINGUA dell'utente.
    - Se l'utente scrive in Inglese -> Rispondi in Inglese.
    - Se l'utente scrive in Italiano -> Rispondi in Italiano.
@@ -556,7 +556,7 @@ if idea:
 
 # --- VISUALIZZAZIONE ---
 if st.session_state.messages:
-    # 1. Mostriamo la cronologia (User + eventuali risposte Assistant senza tag)
+    # 1. CICLO CRONOLOGIA: Mostriamo i messaggi passati e il prompt dell'utente
     for i, msg in enumerate(st.session_state.messages):
         is_last_assistant_with_tags = (
             msg["role"] == "assistant" and 
@@ -564,17 +564,18 @@ if st.session_state.messages:
             i == len(st.session_state.messages) - 1
         )
         
-        # Mostriamo il messaggio solo se NON è l'ultima risposta strutturata (che mettiamo nelle card)
+        # Mostriamo il messaggio nel fumetto solo se NON è l'ultima risposta strutturata
+        # (perché quella la trasformiamo nelle card nere qui sotto)
         if msg["role"] == "user" or not is_last_assistant_with_tags:
             with st.chat_message(msg["role"]):
                 st.write(msg["content"])
 
-    # 2. Se l'ultima risposta è strutturata, creiamo le Card nere
+    # 2. LOGICA CARD: Se l'ultima risposta ha i tag, creiamo le card eleganti
     ultimo_msg = st.session_state.messages[-1]
     if ultimo_msg["role"] == "assistant" and "[LINKEDIN]" in ultimo_msg["content"]:
-        # Definiamo 'ultima' correttamente per evitare l'errore rosso
         ultima = ultimo_msg["content"]
 
+        # Funzione per estrarre il testo tra i tag
         def estrai(testo, tag, tag_succ=None):
             try:
                 p = testo.split(tag)[1]
@@ -582,36 +583,7 @@ if st.session_state.messages:
                 return p.strip()
             except: return None
 
-        def titolo_card(nome):
-            st.markdown(f"""
-            <div style="background-color: #1A1A1A; border-radius: 6px; padding: 0.6rem 1.2rem; margin-top: 1.5rem; margin-bottom: 1rem;">
-                <h3 style="margin: 0; color: #FFFFFF !important; font-size: 1.05rem; font-family: 'Inter', sans-serif;">{nome}</h3>
-            </div>
-            """, unsafe_allow_html=True)
-
-        # Layout delle card (Sostituito 'testo_completo' con 'ultima')
-        st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
-        
-        # LinkedIn
-        titolo_card("LinkedIn")
-        st.write(estrai(ultima, "[LINKEDIN]", "[INSTAGRAM]"))
-        
-        # Instagram
-        st.markdown("<div style='margin-top: 2.5rem;'></div>", unsafe_allow_html=True)
-        titolo_card("Instagram")
-        st.write(estrai(ultima, "[INSTAGRAM]", "[TIKTOK]"))
-        
-        # TikTok
-        st.markdown("<div style='margin-top: 2.5rem;'></div>", unsafe_allow_html=True)
-        titolo_card("TikTok")
-        st.write(estrai(ultima, "[TIKTOK]", "[FACEBOOK]"))
-        
-        # Facebook
-        st.markdown("<div style='margin-top: 2.5rem;'></div>", unsafe_allow_html=True)
-        titolo_card("Facebook")
-        st.write(estrai(ultima, "[FACEBOOK]"))
-
-        # Versione potenziata: Titoli bianchi garantiti su fondo nero
+        # Funzione per il titolo della card (Versione potenziata CSS)
         def titolo_card(nome):
             st.markdown(f"""
             <style>
@@ -620,35 +592,41 @@ if st.session_state.messages:
                     -webkit-text-fill-color: #FFFFFF !important;
                 }}
             </style>
-            <div class="dark-label-card-{nome.lower()}" style="background-color: #1A1A1A; border-radius: 6px; padding: 0.6rem 1.2rem; margin-bottom: 1.2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.15);">
+            <div class="dark-label-card-{nome.lower()}" style="background-color: #1A1A1A; border-radius: 6px; padding: 0.6rem 1.2rem; margin-top: 1.5rem; margin-bottom: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.15);">
                 <h3 style="margin: 0; font-family: 'Inter', sans-serif; font-size: 1.05rem; font-weight: 600; letter-spacing: 0.5px; color: #FFFFFF !important;">
                     {nome}
                 </h3>
             </div>
             """, unsafe_allow_html=True)
 
-        # Layout verticale: uno sotto l'altro con ampio respiro
+        # Spazio iniziale prima delle card
         st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
         
-        titolo_card("LinkedIn")
-        st.write(estrai(ultima, "[LINKEDIN]", "[INSTAGRAM]"))
+        # --- Rendering delle 4 Card (UNA SOLA VOLTA) ---
         
-        st.markdown("<div style='margin-top: 2.5rem;'></div>", unsafe_allow_html=True)
+        # LinkedIn
+        c_linkedin = estrai(ultima, "[LINKEDIN]", "[INSTAGRAM]")
+        if c_linkedin:
+            titolo_card("LinkedIn")
+            st.write(c_linkedin)
         
-        titolo_card("Instagram")
-        st.write(estrai(ultima, "[INSTAGRAM]", "[TIKTOK]"))
+        # Instagram
+        c_instagram = estrai(ultima, "[INSTAGRAM]", "[TIKTOK]")
+        if c_instagram:
+            st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
+            titolo_card("Instagram")
+            st.write(c_instagram)
         
-        st.markdown("<div style='margin-top: 2.5rem;'></div>", unsafe_allow_html=True)
+        # TikTok
+        c_tiktok = estrai(ultima, "[TIKTOK]", "[FACEBOOK]")
+        if c_tiktok:
+            st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
+            titolo_card("TikTok")
+            st.write(c_tiktok)
         
-        titolo_card("TikTok")
-        st.write(estrai(ultima, "[TIKTOK]", "[FACEBOOK]"))
-        
-        st.markdown("<div style='margin-top: 2.5rem;'></div>", unsafe_allow_html=True)
-        
-        titolo_card("Facebook")
-        st.write(estrai(ultima, "[FACEBOOK]"))
-            
-    else:
-        for msg in st.session_state.messages:
-            with st.chat_message(msg["role"]):
-                st.write(msg["content"])
+        # Facebook
+        c_facebook = estrai(ultima, "[FACEBOOK]")
+        if c_facebook:
+            st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
+            titolo_card("Facebook")
+            st.write(c_facebook)
