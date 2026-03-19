@@ -464,7 +464,6 @@ with st.sidebar:
     st.markdown("**Tone & Audience**", help="Define your strategic parameters")
     tono_manuale = st.text_input("Tone", placeholder="Professional, Sarcastic, Emotional, Institutional...")
     target_manuale = st.text_input("Target", placeholder="Gen Z, Fitness enthusiasts, Entrepreneurs, Millennials...")
-    lingua = st.selectbox("Language", ["Italiano", "English", "Spanish", "French", "German"], index=0)
     
    
     
@@ -502,6 +501,13 @@ PARAMETRI MANDATORI:
 - TONO: {tono_manuale if tono_manuale else 'Professionale e analitico'}
 - TARGET: {target_manuale if target_manuale else 'Pubblico generalista'}
 - LINGUA DI OUTPUT: {lingua}  
+
+REGOLE DI LINGUA (CRITICHE):
+1. RILEVAMENTO AUTOMATICO: Identifica la lingua utilizzata dall'utente nell'ultimo messaggio.
+2. EFFETTO SPECCHIO: Rispondi SEMPRE ed ESCLUSIVAMENTE nella stessa lingua dell'utente. 
+   - Se l'utente scrive in Inglese, l'intero output (titoli dei tag inclusi) deve essere in Inglese.
+   - Se l'utente scrive in Italiano, tutto deve essere in Italiano.
+   - Applica questa regola a tutti i formati (LinkedIn, Instagram, TikTok, Facebook).
 
 REGOLE DI CONTENUTO E FORMATTAZIONE (CRITICHE):
 - COPY COMPLETO: Non fare riassunti o "spiegazioni" di cosa faresti. Scrivi il TESTO REALE, COMPLETO E CORPOSO, pronto per essere pubblicato.
@@ -550,15 +556,61 @@ if idea:
 
 # --- VISUALIZZAZIONE ---
 if st.session_state.messages:
-    ultima = next((m["content"] for m in reversed(st.session_state.messages) if m["role"] == "assistant"), None)
+    # 1. Mostriamo la cronologia della chat (Messaggio Utente + Risposte vecchie)
+    for i, msg in enumerate(st.session_state.messages):
+        # Evitiamo di mostrare l'ultima risposta dell'assistente come testo semplice
+        # se stiamo per trasformarla nelle card nere, altrimenti sarebbe un doppione.
+        is_ultima_risposta_con_tag = (
+            msg["role"] == "assistant" and 
+            "[LINKEDIN]" in msg["content"] and 
+            msg == st.session_state.messages[-1]
+        )
+        
+        if not is_ultima_risposta_con_tag:
+            with st.chat_message(msg["role"]):
+                st.write(msg["content"])
+
+    # 2. Se l'ultima risposta dell'IA è una strategia (contiene i tag), creiamo le Card
+    ultima = st.session_state.messages[-1]["content"] if st.session_state.messages[-1]["role"] == "assistant" else None
     
     if ultima and "[LINKEDIN]" in ultima:
         def estrai(testo, tag, tag_succ=None):
             try:
-                p = testo.split(tag)[1]
+                parti = testo.split(tag)
+                if len(parti) < 2: return None
+                p = parti[1]
                 if tag_succ: p = p.split(tag_succ)[0]
                 return p.strip()
             except: return None
+
+        def titolo_card(nome):
+            st.markdown(f"""
+            <style>
+                .dark-label-card-{nome.lower()} h3 {{
+                    color: #FFFFFF !important;
+                    -webkit-text-fill-color: #FFFFFF !important;
+                }}
+            </style>
+            <div class="dark-label-card-{nome.lower()}" style="background-color: #1A1A1A; border-radius: 6px; padding: 0.6rem 1.2rem; margin-top: 1.5rem; margin-bottom: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.15);">
+                <h3 style="margin: 0; font-family: 'Inter', sans-serif; font-size: 1.05rem; font-weight: 600; letter-spacing: 0.5px; color: #FFFFFF !important;">
+                    {nome}
+                </h3>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Visualizzazione Social ordinata
+        social_list = [
+            ("[LINKEDIN]", "[INSTAGRAM]", "LinkedIn"),
+            ("[INSTAGRAM]", "[TIKTOK]", "Instagram"),
+            ("[TIKTOK]", "[FACEBOOK]", "TikTok"),
+            ("[FACEBOOK]", None, "Facebook")
+        ]
+
+        for tag, succ, nome in social_list:
+            testo_estratto = estrai(ultima, tag, succ)
+            if testo_estratto:
+                titolo_card(nome)
+                st.write(testo_estratto)
 
         # Versione potenziata: Titoli bianchi garantiti su fondo nero
         def titolo_card(nome):
